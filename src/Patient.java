@@ -1,9 +1,17 @@
 import java.time.LocalDate;
+import java.time.Period;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class Patient {
     private int id;
     private String firstName, lastName, phoneNum, streetAddress, city, province;
     private LocalDate birthday;
+
+    private final String phoneRegEx = "\\(?[2-9]\\d{2}\\)?[-\\s]?[2-9]\\d{2}[-\\s]?\\d{4}";
+    private final String nameRegEx = "[A-Z][a-zA-Z\\-\\s']*";
 
     public Patient(String firstName, String lastName, String phoneNum, String streetAddress, String city, String province, LocalDate birthday) {
         setFirstName(firstName);
@@ -13,14 +21,19 @@ public class Patient {
         setCity(city);
         setProvince(province);
         setBirthday(birthday);
+        //int id = DBUtility.insertRecord();
+        //setID(id);
     }
 
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    private void setId(int id) {
+        if (id>0)
+            this.id = id;
+        else throw new IllegalArgumentException("id must be greater than 0");
+
     }
 
     public String getFirstName() {
@@ -28,7 +41,9 @@ public class Patient {
     }
 
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        if (firstName.matches(nameRegEx))
+            this.firstName = firstName;
+        else throw new IllegalArgumentException("first name must start with upper case letter");
     }
 
     public String getLastName() {
@@ -36,7 +51,9 @@ public class Patient {
     }
 
     public void setLastName(String lastName) {
-        this.lastName = lastName;
+        if (lastName.matches(nameRegEx))
+            this.lastName = lastName;
+        else throw new IllegalArgumentException("last name must start with upper case letter");
     }
 
     public String getPhoneNum() {
@@ -44,7 +61,10 @@ public class Patient {
     }
 
     public void setPhoneNum(String phoneNum) {
-        this.phoneNum = phoneNum;
+        if (phoneNum.matches(phoneRegEx))
+            this.phoneNum = phoneNum;
+        else
+            throw new IllegalArgumentException("Phone number must match North American Dialing Plan");
     }
 
     public String getStreetAddress() {
@@ -52,7 +72,12 @@ public class Patient {
     }
 
     public void setStreetAddress(String streetAddress) {
-        this.streetAddress = streetAddress;
+        //We should build a regex for this, but because of time constraints,
+        //we will just do isBlank().
+        if (!streetAddress.isBlank())
+            this.streetAddress = streetAddress;
+        else
+            throw new IllegalArgumentException("Street name should have a number and a street name");
     }
 
     public String getCity() {
@@ -60,15 +85,30 @@ public class Patient {
     }
 
     public void setCity(String city) {
-        this.city = city;
+        //It is best to populate a list of valid cities
+        if (!city.isBlank())
+            this.city = city;
+        throw new IllegalArgumentException("city must be from the list: ");
+
     }
 
     public String getProvince() {
         return province;
     }
 
+    public static ArrayList<String> getProviceList()
+    {
+        ArrayList<String> provinces = new ArrayList(Arrays.asList("NL","PE","NS","NB","QC","ON","MB","SK","AB",
+                "BC","YT","NT","NU"));
+        Collections.sort(provinces);
+        return provinces;
+    }
+
     public void setProvince(String province) {
-        this.province = province;
+        if (getProviceList().contains(province))
+            this.province = province;
+        else
+            throw new IllegalArgumentException("Province must be in the list: "+getProviceList());
     }
 
     public LocalDate getBirthday() {
@@ -76,6 +116,18 @@ public class Patient {
     }
 
     public void setBirthday(LocalDate birthday) {
-        this.birthday = birthday;
+        if (birthday.isBefore(LocalDate.now()) || birthday.isEqual(LocalDate.now()))
+        {
+            this.birthday = birthday;
+            if (getAge()>120)
+                throw new IllegalArgumentException("patient cannot be over 120 years of age");
+        }
+        else
+            throw new IllegalArgumentException("Birthday must cannot be in the future");
+    }
+
+    public int getAge()
+    {
+        return Period.between(LocalDate.now(),birthday).getYears();
     }
 }
